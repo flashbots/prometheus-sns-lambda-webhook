@@ -119,7 +119,12 @@ func (p *Processor) Lambda(ctx context.Context, event events.SNSEvent) error {
 	}
 
 	if len(errs) != 0 {
-		return errors.Join(errs...)
+		err := errors.Join(errs...)
+		l.Error("Failed to process event",
+			zap.Any("event", event),
+			zap.Error(err),
+		)
+		return err
 	}
 	return nil
 }
