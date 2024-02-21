@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -12,8 +13,13 @@ import (
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/flashbots/prometheus-sns-lambda-webhook/config"
+	"github.com/flashbots/prometheus-sns-lambda-webhook/secret"
 	"github.com/flashbots/prometheus-sns-lambda-webhook/types"
 	"go.uber.org/zap"
+)
+
+var (
+	ErrSecretMissingKey = errors.New("secret manager misses key")
 )
 
 type Processor struct {
@@ -24,6 +30,20 @@ type Processor struct {
 }
 
 func New(cfg *config.Config) (*Processor, error) {
+	if strings.HasPrefix(cfg.Webhook.Url, "arn:aws:secretsmanager:") {
+		s, err := secret.AWS(cfg.Webhook.Url)
+		if err != nil {
+			return nil, err
+		}
+		webhookUrl, exists := s["WEBHOOK_URL"]
+		if !exists {
+			return nil, fmt.Errorf("%w: %s: %s",
+				ErrSecretMissingKey, cfg.Webhook.Url, "WEBHOOK_URL",
+			)
+		}
+		cfg.Webhook.Url = webhookUrl
+	}
+
 	return &Processor{
 		includeBody: cfg.Webhook.IncludeBody,
 		log:         zap.L(),
