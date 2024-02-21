@@ -37,6 +37,8 @@ func (p *Processor) processAlert(
 	_ string,
 	alert *types.Alert,
 ) error {
+	l := p.log
+
 	var body io.Reader = nil
 	if p.includeBody {
 		body := new(bytes.Buffer)
@@ -60,6 +62,10 @@ func (p *Processor) processAlert(
 	if _, err := io.ReadAll(res.Body); err != nil {
 		return err
 	}
+
+	l.Info("Processed an alert",
+		zap.String("alertname", alert.Labels["alertname"]),
+	)
 
 	return nil
 }
