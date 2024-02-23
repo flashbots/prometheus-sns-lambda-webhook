@@ -23,8 +23,30 @@ archives:
 checksum:
   name_template: 'checksums.txt'
 
-signs:
-  - artifacts: checksum
-
 release:
   prerelease: auto
+
+dockers:
+  - dockerfile: Dockerfile.goreleaser
+    goarch: amd64
+    goos: linux
+    use: buildx
+    build_flag_templates:
+      - --platform=linux/amd64
+    image_templates:
+      - "ghcr.io/flashbots/prometheus-sns-lambda-webhook:{{ .Tag }}-amd64"
+
+  - dockerfile: Dockerfile.goreleaser
+    goarch: arm64
+    goos: linux
+    use: buildx
+    build_flag_templates:
+      - --platform=linux/arm64
+    image_templates:
+      - "ghcr.io/flashbots/prometheus-sns-lambda-webhook:{{ .Tag }}-arm64"
+
+docker_manifests:
+  - name_template: "ghcr.io/flashbots/prometheus-sns-lambda-webhook:{{ .Tag }}"
+    image_templates:
+      - "ghcr.io/flashbots/prometheus-sns-lambda-webhook:{{ .Tag }}-amd64"
+      - "ghcr.io/flashbots/prometheus-sns-lambda-webhook:{{ .Tag }}-arm64"
