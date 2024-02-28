@@ -10,6 +10,7 @@ import (
 	awslambda "github.com/aws/aws-lambda-go/lambda"
 	"github.com/flashbots/prometheus-sns-lambda-webhook/config"
 	"github.com/flashbots/prometheus-sns-lambda-webhook/processor"
+	"github.com/flashbots/prometheus-sns-lambda-webhook/secret"
 	"github.com/urfave/cli/v2"
 )
 
@@ -21,6 +22,7 @@ var (
 )
 
 var (
+	ErrSecretMissingKey    = errors.New("secret manager misses key")
 	ErrWebhookInvalidUrl   = errors.New("webhook url is invalid")
 	ErrWebhookUndefinedUrl = errors.New("webhook url is not defined")
 
@@ -61,6 +63,22 @@ func CommandLambda(cfg *config.Config) *cli.Command {
 		},
 
 		Before: func(_ *cli.Context) error {
+			// read secrets (if applicable)
+			if strings.HasPrefix(cfg.Webhook.Url, "arn:aws:secretsmanager:") {
+				s, err := secret.AWS(cfg.Webhook.Url)
+				if err != nil {
+					return err
+				}
+				webhookUrl, exists := s["WEBHOOK_URL"]
+				if !exists {
+					return fmt.Errorf("%w: %s: %s",
+						ErrSecretMissingKey, cfg.Webhook.Url, "WEBHOOK_URL",
+					)
+				}
+				cfg.Webhook.Url = webhookUrl
+			}
+
+			// validate inputs
 			if cfg.Webhook.Url == "" {
 				return ErrWebhookUndefinedUrl
 			}
