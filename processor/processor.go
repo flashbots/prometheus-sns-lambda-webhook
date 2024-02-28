@@ -34,7 +34,6 @@ func New(cfg *config.Config) (*Processor, error) {
 
 func (p *Processor) processAlert(
 	ctx context.Context,
-	_ string,
 	alert *types.Alert,
 ) error {
 	l := p.log
@@ -94,7 +93,7 @@ func (p *Processor) processMessage(
 		if err == nil {
 			alert.StartsAt = _timestamp.Format("2006-01-02T15:04:05Z07:00")
 		}
-		if err := p.processAlert(ctx, topic, &alert); err != nil {
+		if err := p.processAlert(ctx, &alert); err != nil {
 			errs = append(errs, err)
 		}
 	}
