@@ -47,7 +47,7 @@ func (p *Processor) processAlert(
 		}
 	}
 
-	req, err := http.NewRequest(p.method, p.url, body)
+	req, err := http.NewRequestWithContext(ctx, p.method, p.url, body)
 	if err != nil {
 		return err
 	}
